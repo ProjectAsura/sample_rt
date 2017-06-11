@@ -17,7 +17,7 @@
 enum ReflectionType
 {
     Diffuse             = 0,    //!< 完全拡散反射.
-    PerfecctSpecular    = 1,    //!< 完全鏡面反射.
+    PerfectSpecular     = 1,    //!< 完全鏡面反射.
     Specular            = 2,    //!< 鏡面反射.
     Refraction          = 3,    //!< 屈折.
 };

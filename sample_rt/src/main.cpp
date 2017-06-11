@@ -121,7 +121,7 @@ Vector3 radiance(const Ray& ray, int depth)
         }
         break;
 
-    case ReflectionType::PerfecctSpecular:
+    case ReflectionType::PerfectSpecular:
         {
             // 反射させる.
             return obj.color * radiance(Ray(hit_pos, reflect(ray.dir, normal)), depth + 1);
