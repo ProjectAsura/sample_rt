@@ -57,7 +57,7 @@ inline bool intersect_scene(const Ray& ray, double* t, int* id)
         }
     }
 
-    return *t < D_HIT_MAX;
+    return (*t < D_HIT_MAX);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -72,11 +72,19 @@ Vector3 radiance(const Ray& ray, int depth)
     if (!intersect_scene(ray, &t, &id))
     { return g_back_ground; }
 
+    // 交差物体.
     const auto& obj = g_spheres[id];
+
+    // 交差位置.
     const auto hit_pos = ray.pos + ray.dir * t;
+
+    // 法線ベクトル.
     const auto normal  = normalize(hit_pos - obj.pos);
+
+    // 物体からのレイの入出を考慮した法線ベクトル.
     const auto orienting_normal = (dot(normal, ray.dir) < 0.0) ? normal : -normal;
 
+    // 打ち切り深度に達したら終わり.
     if(depth > g_max_depth)
     { return g_back_ground; }
 
@@ -102,11 +110,12 @@ Vector3 radiance(const Ray& ray, int depth)
             // 遮蔽物がない場合.
             if (t_ >= light_dist)
             {
-                auto diffuse = obj.color * std::max(dot(orienting_normal, light_dir), 0.0);
-                return g_light_color * diffuse / (light_dist * light_dist);
+                auto diffuse = obj.color * std::max(dot(orienting_normal, light_dir), 0.0) / (light_dist * light_dist);
+                return g_light_color * diffuse;
             }
             else
             {
+                // 遮蔽物がある.
                 return g_shadow_color;
             }
         }
@@ -114,13 +123,14 @@ Vector3 radiance(const Ray& ray, int depth)
 
     case ReflectionType::PerfecctSpecular:
         {
+            // 反射させる.
             return obj.color * radiance(Ray(hit_pos, reflect(ray.dir, normal)), depth + 1);
         }
         break;
 
     case ReflectionType::Refraction:
         {
-            // 反射ベクトル.
+            // 反射レイ
             auto reflect_ray = Ray(hit_pos, reflect(ray.dir, normal));
 
             // 内部侵入するか?
@@ -132,8 +142,9 @@ Vector3 radiance(const Ray& ray, int depth)
             // 物体の屈折率
             const auto nt = 1.5;
 
+            // Snellの法則.
             const auto nnt = (into) ? (nc / nt) : (nt / nc);
-            const auto vn = dot(ray.dir, orienting_normal);
+            const auto vn  = dot(ray.dir, orienting_normal);
             const auto cos2t = 1.0 - nnt * nnt * (1.0 - vn * vn);
 
             // 全反射かどうかチェック.
@@ -144,19 +155,22 @@ Vector3 radiance(const Ray& ray, int depth)
             auto refract = normalize(ray.dir * nnt - normal * ((into) ? 1.0 : -1.0) * (vn * nnt + sqrt(cos2t)) );
 
             // Schlickによる Fresnel の反射係数の近似.
-            const auto a = nt - nc;
-            const auto b = nt + nc;
+            const auto a  = nt - nc;
+            const auto b  = nt + nc;
             const auto R0 = (a * a) / (b * b);
 
-            const auto c = 1.0 - ((into) ? -vn : dot(refract, normal));
+            const auto c  = 1.0 - ((into) ? -vn : dot(refract, normal));
             const auto Re = R0 + (1.0 - R0) * pow(c, 5.0);
 
             const auto nnt2 = pow((into) ? (nc / nt) : (nt /nc), 2.0);
             const auto Tr = (1.0 - Re) * nnt2;
-            const auto p = 0.25 + 0.5 * Re;
+            const auto p  = 0.25 + 0.5 * Re;
+
+            // 屈性レイ
+            Ray refract_ray(hit_pos, refract);
 
             const auto reflect_result = radiance(reflect_ray, depth + 1) * Re;
-            const auto refract_result = radiance(Ray(hit_pos, refract), depth +1) * Tr;
+            const auto refract_result = radiance(refract_ray, depth + 1) * Tr;
 
             return obj.color * (reflect_result + refract_result);
         }
@@ -187,12 +201,14 @@ Vector3 radiance(const Ray& ray, int depth)
             }
             else
             {
+                // 遮蔽物がある.
                 return g_shadow_color;
             }
         }
         break;
     }
 
+    // どれにもヒットしなかった.
     return g_back_ground;
 }
 
@@ -204,9 +220,11 @@ Vector3 radiance(const Ray& ray, int depth)
 //-------------------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+    // レンダーターゲットのサイズ.
     int width  = 640;
     int height = 480;
 
+    // カメラ用意.
     Camera camera2(
         Vector3(50.0, 52.0, 295.6),
         normalize(Vector3(0.0, -0.042612, -1.0)),
@@ -216,9 +234,11 @@ int main(int argc, char** argv)
         130.0
     );
 
+    // レンダーターゲット生成.
     std::vector<Vector3> image;
     image.resize(width * height);
 
+    // レンダーターゲットをクリア.
     for (size_t i = 0; i < image.size(); ++i)
     { image[i] = g_back_ground; }
 
@@ -229,11 +249,16 @@ int main(int argc, char** argv)
             auto idx = y * width + x;
             auto fx = double(x) / double(width)  - 0.5;
             auto fy = double(y) / double(height) - 0.5;
+
+            // Let's レイトレ！
             image[idx] += radiance(camera2.emit(fx, fy), 0);
         }
     }
 
+    // レンダーターゲットの内容をファイルに保存.
     save_bmp("image.bmp", width, height, &image.data()->x);
+
+    // レンダーターゲットクリア.
     image.clear();
 
     return 0;
