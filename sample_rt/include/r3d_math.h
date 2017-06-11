@@ -183,6 +183,11 @@ private:
     uint32_t d;
 };
 
+inline Vector2 operator * (double lhs, const Vector2& rhs)
+{ return Vector2(lhs * rhs.x, lhs * rhs.y); }
+
+inline Vector3 operator * (double lhs, const Vector3& rhs)
+{ return Vector3(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z); }
 
 inline double length(const Vector2& value)
 { return sqrt(value.x * value.x + value.y * value.y); }
@@ -196,6 +201,18 @@ inline double dot(const Vector2& lhs, const Vector2& rhs)
 inline double dot(const Vector3& lhs, const Vector3& rhs)
 { return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z; }
 
+inline Vector2 normalize(const Vector2& value)
+{ return value / length(value); }
+
+inline Vector3 normalize(const Vector3& value)
+{ return value / length(value); }
+
+inline Vector2 reflect(const Vector2& i, const Vector2& n)
+{ return i - n * 2.0 * dot(i, n); }
+
+inline Vector3 reflect(const Vector3& i, const Vector3& n)
+{ return i - n * 2.0 * dot(i, n); }
+
 inline Vector3 cross(const Vector3& lhs, const Vector3& rhs)
 {
     return Vector3(
@@ -204,9 +221,4 @@ inline Vector3 cross(const Vector3& lhs, const Vector3& rhs)
         (lhs.x * rhs.y) - (lhs.y * rhs.x));
 }
 
-inline Vector2 normalize(const Vector2& value)
-{ return value / length(value); }
-
-inline Vector3 normalize(const Vector3& value)
-{ return value / length(value); }
 

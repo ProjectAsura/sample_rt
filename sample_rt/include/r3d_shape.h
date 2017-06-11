@@ -46,7 +46,7 @@ struct Sphere
     , type      (t)
     { /* DO_NOTHING*/ }
 
-    inline double intersect(const Ray& ray)
+    inline double intersect(const Ray& ray) const
     {
         auto p = pos - ray.pos;
         auto b = dot(p, ray.dir);
