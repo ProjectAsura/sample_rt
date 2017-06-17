@@ -29,7 +29,7 @@ public:
     {
         pos         = position;
         axis_x      = normalize(cross(dir, upward)) * fov * aspect;
-        axis_y      = normalize(cross(axis_x, dir)) * fov;
+        axis_y      = normalize(cross(dir, axis_x)) * fov;
         axis_z      = dir;
         near_clip   = znear;
     }

@@ -10,9 +10,8 @@
 #include <r3d_math.h>
 #include <r3d_camera.h>
 #include <r3d_shape.h>
-#include <r3d_image.h>
 #include <vector>
-#include <algorithm>
+#include <stb/stb_image_write.h>
 
 
 namespace {
@@ -110,7 +109,7 @@ Vector3 radiance(const Ray& ray, int depth)
             // 遮蔽物がない場合.
             if (t_ >= light_dist)
             {
-                auto diffuse = obj.color * std::max(dot(orienting_normal, light_dir), 0.0) / (light_dist * light_dist);
+                auto diffuse = obj.color * max(dot(orienting_normal, light_dir), 0.0) / (light_dist * light_dist);
                 return g_light_color * diffuse;
             }
             else
@@ -195,8 +194,8 @@ Vector3 radiance(const Ray& ray, int depth)
             if (t_ >= light_dist)
             {
                 auto shininess  = 500.0;
-                auto diffuse    = (obj.color / (light_dist * light_dist)) * std::max(dot(orienting_normal, light_dir), 0.0);
-                auto specular   = (obj.color) * pow(std::max(dot(light_dir, reflect(ray.dir, orienting_normal)), 0.0), shininess);
+                auto diffuse    = (obj.color / (light_dist * light_dist)) * max(dot(orienting_normal, light_dir), 0.0);
+                auto specular   = (obj.color) * pow(max(dot(light_dir, reflect(ray.dir, orienting_normal)), 0.0), shininess);
                 return g_light_color * (diffuse + specular);
             }
             else
@@ -212,6 +211,34 @@ Vector3 radiance(const Ray& ray, int depth)
     return g_back_ground;
 }
 
+//-------------------------------------------------------------------------------------------------
+//      BMPファイルに保存します.
+//-------------------------------------------------------------------------------------------------
+void save_to_bmp(const char* filename, int width, int height, const double* pixels)
+{
+    std::vector<uint8_t> images;
+    images.resize(width * height * 3);
+
+    const double inv_gamma = 1.0 / 2.2;
+
+    for(auto i=0; i<width * height * 3; i+=3)
+    {
+        auto r = pow(pixels[i + 0], inv_gamma);
+        auto g = pow(pixels[i + 1], inv_gamma);
+        auto b = pow(pixels[i + 2], inv_gamma);
+
+        r = saturate(r);
+        g = saturate(g);
+        b = saturate(b);
+
+        images[i + 0] = static_cast<uint8_t>( r * 255.0 + 0.5 );
+        images[i + 1] = static_cast<uint8_t>( g * 255.0 + 0.5 );
+        images[i + 2] = static_cast<uint8_t>( b * 255.0 + 0.5 );
+    }
+
+    stbi_write_bmp(filename, width, height, 3, images.data());
+}
+
 } // namespace
 
 
@@ -225,7 +252,7 @@ int main(int argc, char** argv)
     int height = 480;
 
     // カメラ用意.
-    Camera camera2(
+    Camera camera(
         Vector3(50.0, 52.0, 295.6),
         normalize(Vector3(0.0, -0.042612, -1.0)),
         Vector3(0.0, 1.0, 0.0),
@@ -251,12 +278,12 @@ int main(int argc, char** argv)
             auto fy = double(y) / double(height) - 0.5;
 
             // Let's レイトレ！
-            image[idx] += radiance(camera2.emit(fx, fy), 0);
+            image[idx] += radiance(camera.emit(fx, fy), 0);
         }
     }
 
     // レンダーターゲットの内容をファイルに保存.
-    save_bmp("image.bmp", width, height, &image.data()->x);
+    save_to_bmp("image.bmp", width, height, &image.data()->x);
 
     // レンダーターゲットクリア.
     image.clear();

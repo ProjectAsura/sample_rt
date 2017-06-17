@@ -5,6 +5,8 @@
 //-------------------------------------------------------------------------------------------------
 #pragma once
 
+#define NOMINMAX
+
 //-------------------------------------------------------------------------------------------------
 // Includes
 //-------------------------------------------------------------------------------------------------
@@ -27,6 +29,17 @@ constexpr double   D_PIDIV4    = 0.78539816339744830961566084581988;    //!< π/
 constexpr double   D_MAX       = 1.7976931348623158e+308;               //!< double型の最大値です.
 constexpr double   D_MIN       = 2.2250738585072014e-308;               //!< double型の最小値です.
 
+inline double max(double lhs, double rhs)
+{ return (lhs > rhs) ? lhs : rhs; }
+
+inline double min(double lhs, double rhs)
+{ return (lhs < rhs) ? lhs : rhs; }
+
+inline double clamp(double value, double mini, double maxi)
+{ return max(mini, min(maxi, value)); }
+
+inline double saturate(double value)
+{ return clamp(value, 0, 1); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Vector2 structure
