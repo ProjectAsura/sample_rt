@@ -31,7 +31,7 @@ const Sphere  g_spheres[] = {
     Sphere(1e5,     Vector3(50.0,          40.8,  -1e5 + 170.0), Vector3(),                   ReflectionType::Diffuse),
     Sphere(1e5,     Vector3(50.0,           1e5,          81.6), Vector3(0.75,  0.75,  0.75), ReflectionType::Diffuse),
     Sphere(1e5,     Vector3(50.0,   -1e5 + 81.6,          81.6), Vector3(0.75,  0.75,  0.75), ReflectionType::Diffuse),
-    Sphere(16.5,    Vector3(27.0,          16.5,          47.0), Vector3(0.75,  0.25,  0.25), ReflectionType::Specular),
+    Sphere(16.5,    Vector3(27.0,          16.5,          47.0), Vector3(0.75,  0.25,  0.25), ReflectionType::PerfectSpecular),
     Sphere(16.5,    Vector3(73.0,          16.5,          78.0), Vector3(0.99,  0.99,  0.99), ReflectionType::Refraction)
 };
 
@@ -172,37 +172,6 @@ Vector3 radiance(const Ray& ray, int depth)
             const auto refract_result = radiance(refract_ray, depth + 1) * Tr;
 
             return obj.color * (reflect_result + refract_result);
-        }
-        break;
-
-    case ReflectionType::Specular:
-        {
-            double t_;
-            int    id_;
-
-            // ライトベクトル.
-            auto light_dir  = g_light_pos - hit_pos;
-
-            // ライトまでの距離.
-            auto light_dist = length(light_dir);
-
-            // ライトベクトルを正規化.
-            light_dir /= light_dist;
-
-            // ライトまでの間に遮蔽物がないかどうかチェック.
-            intersect_scene(Ray(hit_pos, light_dir), &t_, &id_);
-            if (t_ >= light_dist)
-            {
-                auto shininess  = 500.0;
-                auto diffuse    = (obj.color / (light_dist * light_dist)) * max(dot(orienting_normal, light_dir), 0.0);
-                auto specular   = (obj.color) * pow(max(dot(light_dir, reflect(ray.dir, orienting_normal)), 0.0), shininess);
-                return g_light_color * (diffuse + specular);
-            }
-            else
-            {
-                // 遮蔽物がある.
-                return g_shadow_color;
-            }
         }
         break;
     }
